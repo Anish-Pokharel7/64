@@ -2,7 +2,6 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { colors } from '@theme/colors';
 import { typography } from '@theme/typography';
-import { radius } from '@theme/radius';
 
 type AvatarProps = {
   uri?: string;

@@ -23,6 +23,13 @@ export function usePopularFoods() {
   });
 }
 
+export function useFeaturedFoods() {
+  return useQuery({
+    queryKey: ['foods', 'featured'],
+    queryFn: () => foodService.getFeaturedFoods(),
+  });
+}
+
 export function useFoodsByRestaurant(restaurantId: string | undefined) {
   return useQuery({
     queryKey: ['foods', 'restaurant', restaurantId],
@@ -36,5 +43,21 @@ export function useSearchFoods(query: string) {
     queryKey: ['foods', 'search', query],
     queryFn: () => foodService.searchFoods(query),
     enabled: query.length > 0,
+  });
+}
+
+export function useFoodsByCategory(categorySlug: string | undefined) {
+  return useQuery({
+    queryKey: ['foods', 'category', categorySlug],
+    queryFn: () => foodService.getFoodsByCategory(categorySlug!),
+    enabled: !!categorySlug,
+  });
+}
+
+export function useCustomizationGroups(foodId: string | undefined) {
+  return useQuery({
+    queryKey: ['food', foodId, 'customization-groups'],
+    queryFn: () => foodService.getCustomizationGroups(foodId!),
+    enabled: !!foodId,
   });
 }

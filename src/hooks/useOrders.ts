@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { orderService } from '@services/order.service';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CreateOrderInput, orderService } from '@services/order.service';
 
 export function useOrders() {
   return useQuery({
@@ -27,5 +27,16 @@ export function useOrder(id: string | undefined) {
     queryKey: ['order', id],
     queryFn: () => orderService.getOrderById(id!),
     enabled: !!id,
+  });
+}
+
+export function useCreateOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateOrderInput) => orderService.createOrder(input),
+    onSuccess: (order) => {
+      queryClient.setQueryData(['order', order.id], order);
+      void queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
   });
 }

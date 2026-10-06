@@ -1,7 +1,6 @@
 import {
   Pressable,
   ActivityIndicator,
-  StyleSheet,
   Text,
   View,
   ViewStyle,

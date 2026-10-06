@@ -1,49 +1,59 @@
 import { View, StyleSheet, FlatList, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { useState, useCallback } from 'react';
-import { X, SlidersHorizontal } from 'lucide-react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useState, useMemo, useCallback } from 'react';
+import { Image } from 'expo-image';
+import { Package } from 'lucide-react-native';
 import { colors } from '@theme/colors';
 import { typography } from '@theme/typography';
 import { spacing } from '@theme/spacing';
+import { radius } from '@theme/radius';
+import { shadows } from '@theme/shadows';
 import { SearchBar } from '@components/common/SearchBar';
 import { SectionHeader } from '@components/common/SectionHeader';
-import { RestaurantCard } from '@components/home/RestaurantCard';
 import { FoodCard } from '@components/home/FoodCard';
+import { CategoryCard } from '@components/home/CategoryCard';
 import { EmptyState } from '@components/ui/EmptyState';
 import { Loading } from '@components/ui/Loading';
-import { useSearchRestaurants } from '@hooks/useRestaurants';
-import { useSearchFoods } from '@hooks/useFood';
-import { useRestaurants } from '@hooks/useRestaurants';
-import { useFoods } from '@hooks/useFood';
-import { mockCategories } from '@mock/categories';
-import { CategoryCard } from '@components/home/CategoryCard';
+import { useSearchFoods, useFoods, useFoodsByCategory } from '@hooks/useFood';
+import { useCategories } from '@hooks/useCategories';
+import { useComboSets, useSearchCombos } from '@hooks/useCombo';
+import { formatCurrency } from '@utils/currency';
+import { ComboSet } from '@models/combo';
+
+type TabKey = 'all' | 'foods' | 'combos';
 
 export default function SearchScreen() {
+  const params = useLocalSearchParams<{ category?: string; tab?: string }>();
   const [query, setQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>(params.category ?? 'all');
+  const [activeTab, setActiveTab] = useState<TabKey>((params.tab as TabKey) ?? 'all');
 
-  const allRestaurants = useRestaurants();
   const allFoods = useFoods();
-  const searchRestaurants = useSearchRestaurants(query);
+  const allCombos = useComboSets();
   const searchFoods = useSearchFoods(query);
+  const searchCombos = useSearchCombos(query);
+  const categoriesQuery = useCategories();
+  const categoryFoods = useFoodsByCategory(selectedCategory !== 'all' ? selectedCategory : undefined);
 
   const isSearching = query.length > 0;
-  const isLoading = isSearching && (searchRestaurants.isLoading || searchFoods.isLoading);
+  const categories = categoriesQuery.data ?? [];
 
-  const restaurants = isSearching
-    ? searchRestaurants.data ?? []
-    : (allRestaurants.data ?? []).filter(
-        (r) => selectedCategory === 'all' || r.categoryId === selectedCategory
-      );
+  const foods = useMemo(() => {
+    if (isSearching) return searchFoods.data ?? [];
+    if (selectedCategory !== 'all') return categoryFoods.data ?? [];
+    return allFoods.data ?? [];
+  }, [isSearching, searchFoods.data, selectedCategory, categoryFoods.data, allFoods.data]);
 
-  const foods = isSearching
-    ? searchFoods.data ?? []
-    : (allFoods.data ?? []).filter(
-        (f) => selectedCategory === 'all' || f.category === selectedCategory
-      );
+  const combos = useMemo(() => {
+    if (isSearching) return searchCombos.data ?? [];
+    return allCombos.data ?? [];
+  }, [isSearching, searchCombos.data, allCombos.data]);
 
-  const hasResults = restaurants.length > 0 || foods.length > 0;
+  const isLoading = isSearching && (searchFoods.isLoading || searchCombos.isLoading);
+  const showFoods = activeTab === 'all' || activeTab === 'foods';
+  const showCombos = activeTab === 'all' || activeTab === 'combos';
+  const hasResults = (showFoods && foods.length > 0) || (showCombos && combos.length > 0);
 
   const handleClear = useCallback(() => setQuery(''), []);
 
@@ -54,7 +64,7 @@ export default function SearchScreen() {
           <SearchBar
             value={query}
             onChangeText={setQuery}
-            placeholder="Search for food, restaurants..."
+            placeholder="Search for food, combos..."
             showClear={isSearching}
             onClear={handleClear}
           />
@@ -69,10 +79,24 @@ export default function SearchScreen() {
         </View>
       </View>
 
+      <View style={styles.tabBar}>
+        {(['all', 'foods', 'combos'] as TabKey[]).map((tab) => (
+          <Pressable
+            key={tab}
+            onPress={() => setActiveTab(tab)}
+            style={[styles.tab, activeTab === tab && styles.tabActive]}
+          >
+            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+              {tab === 'all' ? 'All' : tab === 'foods' ? 'Food' : 'Combos'}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       {!isSearching && (
         <View style={styles.categoriesRow}>
           <FlatList
-            data={mockCategories}
+            data={[{ id: 'all', name: 'All', icon: 'UtensilsCrossed', slug: 'all' }, ...categories]}
             horizontal
             showsHorizontalScrollIndicator={false}
             keyExtractor={(item) => item.id}
@@ -108,7 +132,7 @@ export default function SearchScreen() {
               />
             ) : (
               <>
-                {foods.length > 0 && (
+                {showFoods && foods.length > 0 && (
                   <View style={styles.section}>
                     <SectionHeader title="Food Items" />
                     <FlatList
@@ -120,7 +144,6 @@ export default function SearchScreen() {
                         <FoodCard
                           food={item}
                           horizontal
-                          showRestaurant
                           onPress={() => router.push(`/(customer)/food/${item.id}`)}
                           onAdd={() => router.push(`/(customer)/food/${item.id}`)}
                         />
@@ -131,17 +154,16 @@ export default function SearchScreen() {
                   </View>
                 )}
 
-                {restaurants.length > 0 && (
+                {showCombos && combos.length > 0 && (
                   <View style={styles.section}>
-                    <SectionHeader title="Restaurants" />
-                    <View style={styles.restaurantList}>
-                      {restaurants.map((r) => (
-                        <View key={r.id} style={{ marginBottom: spacing.md, paddingHorizontal: spacing.lg }}>
-                          <RestaurantCard
-                            restaurant={r}
-                            onPress={() => router.push(`/(customer)/restaurant/${r.id}`)}
-                          />
-                        </View>
+                    <SectionHeader title="Combo Sets" />
+                    <View style={styles.comboList}>
+                      {combos.map((combo) => (
+                        <ComboListItem
+                          key={combo.id}
+                          combo={combo}
+                          onPress={() => router.push(`/(customer)/combo/${combo.id}`)}
+                        />
                       ))}
                     </View>
                   </View>
@@ -156,6 +178,32 @@ export default function SearchScreen() {
         keyboardShouldPersistTaps="handled"
       />
     </SafeAreaView>
+  );
+}
+
+function ComboListItem({ combo, onPress }: { combo: ComboSet; onPress: () => void }) {
+  const savings = combo.originalPrice > combo.price ? combo.originalPrice - combo.price : 0;
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.comboListItem, pressed && { opacity: 0.9 }]}
+    >
+      <Image source={{ uri: combo.image }} style={styles.comboListImage} contentFit="cover" transition={200} />
+      <View style={styles.comboListInfo}>
+        <View style={styles.comboListHeader}>
+          <Package size={16} color={colors.primary} strokeWidth={2} />
+          <Text style={styles.comboListBadge}>Combo</Text>
+        </View>
+        <Text style={styles.comboListName} numberOfLines={1}>{combo.name}</Text>
+        <Text style={styles.comboListDesc} numberOfLines={2}>{combo.description}</Text>
+        <View style={styles.comboListPriceRow}>
+          <Text style={styles.comboListPrice}>{formatCurrency(combo.price)}</Text>
+          {savings > 0 && (
+            <Text style={styles.comboListOriginal}>{formatCurrency(combo.originalPrice)}</Text>
+          )}
+        </View>
+      </View>
+    </Pressable>
   );
 }
 
@@ -177,6 +225,29 @@ const styles = StyleSheet.create({
     ...typography.label,
     color: colors.primary,
   },
+  tabBar: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: spacing.sm + 2,
+    alignItems: 'center',
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceSecondary,
+  },
+  tabActive: {
+    backgroundColor: colors.primary,
+  },
+  tabText: {
+    ...typography.label,
+    color: colors.textSecondary,
+  },
+  tabTextActive: {
+    color: colors.white,
+  },
   categoriesRow: {
     paddingVertical: spacing.sm,
     backgroundColor: colors.surface,
@@ -186,5 +257,63 @@ const styles = StyleSheet.create({
   section: {
     marginTop: spacing['2xl'],
   },
-  restaurantList: {},
+  comboList: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
+  comboListItem: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    ...shadows.sm,
+  },
+  comboListImage: {
+    width: 120,
+    height: 120,
+  },
+  comboListInfo: {
+    flex: 1,
+    padding: spacing.md,
+    justifyContent: 'center',
+  },
+  comboListHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  comboListBadge: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '600',
+    fontSize: 11,
+  },
+  comboListName: {
+    ...typography.heading3,
+    fontSize: 16,
+  },
+  comboListDesc: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  comboListPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  comboListPrice: {
+    ...typography.heading2,
+    fontSize: 18,
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  comboListOriginal: {
+    ...typography.bodySmall,
+    color: colors.textMuted,
+    textDecorationLine: 'line-through',
+  },
 });

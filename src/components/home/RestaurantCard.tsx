@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Image } from 'expo-image';
-import { Star, Clock, Bike, Plus } from 'lucide-react-native';
+import { Star, Clock, Bike } from 'lucide-react-native';
 import { Restaurant } from '@models/restaurant';
 import { colors } from '@theme/colors';
 import { typography } from '@theme/typography';
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   closedOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',

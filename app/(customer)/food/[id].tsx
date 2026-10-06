@@ -1,30 +1,47 @@
 import { View, StyleSheet, ScrollView, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ChevronLeft, ShoppingCart, Star } from 'lucide-react-native';
+import { ChevronLeft, ShoppingCart, Star, Check } from 'lucide-react-native';
 import { Image } from 'expo-image';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { colors } from '@theme/colors';
 import { typography } from '@theme/typography';
 import { spacing } from '@theme/spacing';
 import { radius } from '@theme/radius';
-import { shadows } from '@theme/shadows';
 import { Button } from '@components/ui/Button';
 import { Loading } from '@components/ui/Loading';
 import { ErrorState } from '@components/ui/ErrorState';
 import { QuantitySelector } from '@components/food/QuantitySelector';
 import { Badge } from '@components/ui/Badge';
-import { useFood } from '@hooks/useFood';
+import { useFood, useCustomizationGroups } from '@hooks/useFood';
 import { useCartStore } from '@store/cart.store';
 import { formatCurrency } from '@utils/currency';
+import { CartItemCustomization } from '@models/cart';
 
 export default function FoodDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const foodQuery = useFood(id);
+  const customizationQuery = useCustomizationGroups(id);
   const addItem = useCartStore((s) => s.addItem);
   const cartCount = useCartStore((s) => s.getItemCount());
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, Set<string>>>({});
+  const customizationGroups = customizationQuery.data;
+
+  const customizationPrice = useMemo(() => {
+    let extra = 0;
+    for (const group of customizationGroups ?? []) {
+      const selected = selectedOptions[group.id];
+      if (!selected) continue;
+      for (const option of group.options) {
+        if (selected.has(option.id)) {
+          extra += option.priceAdjustment;
+        }
+      }
+    }
+    return extra;
+  }, [customizationGroups, selectedOptions]);
 
   if (foodQuery.isLoading) {
     return (
@@ -47,11 +64,48 @@ export default function FoodDetailScreen() {
 
   const food = foodQuery.data;
 
+  const toggleOption = (groupId: string, optionId: string, maxSelections: number) => {
+    setSelectedOptions((prev) => {
+      const current = new Set(prev[groupId] ?? []);
+      if (current.has(optionId)) {
+        current.delete(optionId);
+      } else {
+        if (maxSelections === 1) {
+          current.clear();
+        }
+        current.add(optionId);
+      }
+      return { ...prev, [groupId]: current };
+    });
+  };
+
+  const unitPrice = food.price + customizationPrice;
+  const totalPrice = unitPrice * quantity;
+
   const handleAddToCart = () => {
-    addItem(food, quantity);
+    const cartCustomizations: CartItemCustomization[] = [];
+    for (const group of groups) {
+      const selected = selectedOptions[group.id];
+      if (!selected) continue;
+      for (const option of group.options) {
+        if (selected.has(option.id)) {
+          cartCustomizations.push({
+            groupId: group.id,
+            groupName: group.name,
+            optionId: option.id,
+            optionName: option.name,
+            priceAdjustment: option.priceAdjustment,
+          });
+        }
+      }
+    }
+    addItem(food, quantity, cartCustomizations.length > 0 ? cartCustomizations : undefined);
     setAdded(true);
     setTimeout(() => router.push('/(customer)/cart'), 600);
   };
+
+  const groups = customizationGroups ?? [];
+  const canAddToCart = groups.every((g) => !g.isRequired || (selectedOptions[g.id] && selectedOptions[g.id].size >= g.minSelections));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }} edges={['top']}>
@@ -106,17 +160,11 @@ export default function FoodDetailScreen() {
                 <Text style={styles.ratingText}>{food.rating}</Text>
               </View>
             )}
+            {food.prepTimeMinutes && (
+              <Text style={styles.prepTime}>~{food.prepTimeMinutes} min</Text>
+            )}
             <Text style={styles.price}>{formatCurrency(food.price)}</Text>
           </View>
-
-          {food.restaurantName && (
-            <Pressable
-              onPress={() => router.push(`/(customer)/restaurant/${food.restaurantId}`)}
-              style={styles.restaurantLink}
-            >
-              <Text style={styles.restaurantName}>{food.restaurantName}</Text>
-            </Pressable>
-          )}
 
           {food.description && (
             <View style={styles.descriptionSection}>
@@ -125,7 +173,39 @@ export default function FoodDetailScreen() {
             </View>
           )}
 
-          <View style={styles.customizationSection}>
+          {groups.map((group) => (
+            <View key={group.id} style={styles.customizationGroup}>
+              <View style={styles.groupHeader}>
+                <Text style={styles.groupName}>{group.name}</Text>
+                {group.isRequired && <Text style={styles.requiredLabel}>Required</Text>}
+              </View>
+              {group.options.map((option) => {
+                const isSelected = selectedOptions[group.id]?.has(option.id) ?? false;
+                return (
+                  <Pressable
+                    key={option.id}
+                    onPress={() => toggleOption(group.id, option.id, group.maxSelections)}
+                    style={[styles.optionRow, isSelected && styles.optionRowSelected]}
+                  >
+                    <View style={[styles.optionCheckbox, isSelected && styles.optionCheckboxSelected]}>
+                      {isSelected && <Check size={14} color={colors.white} strokeWidth={3} />}
+                    </View>
+                    <Text style={styles.optionName}>{option.name}</Text>
+                    {option.priceAdjustment > 0 && (
+                      <Text style={styles.optionPrice}>+{formatCurrency(option.priceAdjustment)}</Text>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          ))}
+
+          <View style={styles.specialInstructionsSection}>
+            <Text style={styles.sectionTitle}>Special Instructions</Text>
+            <Text style={styles.instructionsHint}>Any special requests for this item?</Text>
+          </View>
+
+          <View style={styles.quantitySection}>
             <Text style={styles.sectionTitle}>Quantity</Text>
             <QuantitySelector
               quantity={quantity}
@@ -137,17 +217,18 @@ export default function FoodDetailScreen() {
 
           <View style={styles.totalCard}>
             <Text style={styles.totalLabel}>Item Total</Text>
-            <Text style={styles.totalValue}>{formatCurrency(food.price * quantity)}</Text>
+            <Text style={styles.totalValue}>{formatCurrency(totalPrice)}</Text>
           </View>
         </View>
       </ScrollView>
 
       <View style={styles.bottomBar}>
         <Button
-          label={added ? 'Added! Going to cart...' : `Add to Cart • ${formatCurrency(food.price * quantity)}`}
+          label={added ? 'Added! Going to cart...' : `Add to Cart • ${formatCurrency(totalPrice)}`}
           onPress={handleAddToCart}
           fullWidth
           size="lg"
+          disabled={!canAddToCart || added}
         />
       </View>
     </SafeAreaView>
@@ -247,20 +328,15 @@ const styles = StyleSheet.create({
     ...typography.label,
     color: colors.textPrimary,
   },
+  prepTime: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+  },
   price: {
     ...typography.heading2,
     fontSize: 22,
     color: colors.primary,
     fontWeight: '700',
-  },
-  restaurantLink: {
-    marginTop: spacing.sm,
-    alignSelf: 'flex-start',
-  },
-  restaurantName: {
-    ...typography.bodySmall,
-    color: colors.primary,
-    fontWeight: '600',
   },
   descriptionSection: {
     marginTop: spacing.lg,
@@ -277,7 +353,71 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: 22,
   },
-  customizationSection: {
+  customizationGroup: {
+    marginTop: spacing.lg,
+  },
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  groupName: {
+    ...typography.heading3,
+    fontSize: 16,
+  },
+  requiredLabel: {
+    ...typography.caption,
+    color: colors.error,
+    fontWeight: '600',
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.xs,
+  },
+  optionRowSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryUltraLight,
+  },
+  optionCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.borderDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  optionCheckboxSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  optionName: {
+    flex: 1,
+    ...typography.body,
+    color: colors.textPrimary,
+  },
+  optionPrice: {
+    ...typography.label,
+    color: colors.textSecondary,
+    fontSize: 13,
+  },
+  specialInstructionsSection: {
+    marginTop: spacing.lg,
+  },
+  instructionsHint: {
+    ...typography.body,
+    color: colors.textMuted,
+    fontStyle: 'italic',
+  },
+  quantitySection: {
     marginTop: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',

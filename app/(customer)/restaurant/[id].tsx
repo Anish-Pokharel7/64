@@ -1,8 +1,7 @@
-import { View, StyleSheet, ScrollView, Text, Pressable, FlatList, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, ShoppingCart } from 'lucide-react-native';
-import { Image } from 'expo-image';
 import { useState, useMemo } from 'react';
 import { colors } from '@theme/colors';
 import { typography } from '@theme/typography';
@@ -23,7 +22,8 @@ export default function RestaurantDetailScreen() {
   const cartCount = useCartStore((s) => s.getItemCount());
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
-  const foods = foodsQuery.data ?? [];
+  const foodsData = foodsQuery.data;
+  const foods = useMemo(() => foodsData ?? [], [foodsData]);
 
   const sections = useMemo(() => {
     if (menuSectionsQuery.data && menuSectionsQuery.data.length > 0) {

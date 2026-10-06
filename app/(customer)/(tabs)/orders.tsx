@@ -1,132 +1,129 @@
-import { View, StyleSheet, FlatList, Text, Pressable } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useMemo } from 'react';
-import { Image } from 'expo-image';
-import { Clock, Package, Bike, CheckCircle2, XCircle } from 'lucide-react-native';
+import { router } from 'expo-router';
+import {
+  MapPin, ClipboardList, Heart, Bell, HelpCircle, LogOut,
+  ChevronRight, Edit3, Ticket, Package,
+} from 'lucide-react-native';
 import { colors } from '@theme/colors';
 import { typography } from '@theme/typography';
 import { spacing } from '@theme/spacing';
-import { radius } from '@theme/radius';
-import { shadows } from '@theme/shadows';
-import { EmptyState } from '@components/ui/EmptyState';
-import { Loading } from '@components/ui/Loading';
-import { Badge } from '@components/ui/Badge';
-import { useOrders } from '@hooks/useOrders';
-import { Order, OrderStatus } from '@models/order';
-import { formatCurrency } from '@utils/currency';
-import { formatDate, timeAgo } from '@utils/date';
+import { Avatar } from '@components/ui/Avatar';
+import { useLogout } from '@hooks/useAuth';
+import { useAuthStore } from '@store/auth.store';
+import { useUnreadNotificationCount } from '@hooks/useNotifications';
 
-const STATUS_CONFIG: Record<OrderStatus, { label: string; variant: 'primary' | 'warning' | 'info' | 'success' | 'error'; icon: React.ReactNode }> = {
-  pending: { label: 'Pending', variant: 'warning', icon: <Clock size={14} color={colors.warning} strokeWidth={2} /> },
-  confirmed: { label: 'Confirmed', variant: 'info', icon: <Package size={14} color={colors.info} strokeWidth={2} /> },
-  preparing: { label: 'Preparing', variant: 'warning', icon: <Clock size={14} color={colors.warning} strokeWidth={2} /> },
-  out_for_delivery: { label: 'On the way', variant: 'info', icon: <Bike size={14} color={colors.info} strokeWidth={2} /> },
-  delivered: { label: 'Delivered', variant: 'success', icon: <CheckCircle2 size={14} color={colors.success} strokeWidth={2} /> },
-  cancelled: { label: 'Cancelled', variant: 'error', icon: <XCircle size={14} color={colors.error} strokeWidth={2} /> },
-};
+export default function ProfileScreen() {
+  const logoutMutation = useLogout();
+  const user = useAuthStore((s) => s.user);
+  const unreadCount = useUnreadNotificationCount();
 
-type TabKey = 'active' | 'past';
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => router.replace('/(auth)/welcome'),
+    });
+  };
 
-export default function OrdersScreen() {
-  const [activeTab, setActiveTab] = useState<TabKey>('active');
-  const { data: orders, isLoading, isError, refetch } = useOrders();
-
-  const filteredOrders = useMemo(() => {
-    if (!orders) return [];
-    if (activeTab === 'active') {
-      return orders.filter((o) => o.status !== 'delivered' && o.status !== 'cancelled');
-    }
-    return orders.filter((o) => o.status === 'delivered' || o.status === 'cancelled');
-  }, [orders, activeTab]);
+  if (!user) return null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>My Orders</Text>
-      </View>
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: spacing['3xl'] }}
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>Profile</Text>
+        </View>
 
-      <View style={styles.tabBar}>
-        <Pressable
-          onPress={() => setActiveTab('active')}
-          accessibilityRole="button"
-          accessibilityLabel="Active orders"
-          style={[styles.tab, activeTab === 'active' && styles.tabActive]}
-        >
-          <Text style={[styles.tabText, activeTab === 'active' && styles.tabTextActive]}>Active</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setActiveTab('past')}
-          accessibilityRole="button"
-          accessibilityLabel="Past orders"
-          style={[styles.tab, activeTab === 'past' && styles.tabActive]}
-        >
-          <Text style={[styles.tabText, activeTab === 'past' && styles.tabTextActive]}>Past</Text>
-        </Pressable>
-      </View>
+        <View style={styles.profileCard}>
+          <Avatar name={user.fullName} size={64} />
+          <View style={styles.profileInfo}>
+            <Text style={styles.name}>{user.fullName}</Text>
+            <Text style={styles.email}>{user.email}</Text>
+            <Text style={styles.phone}>{user.phone}</Text>
+          </View>
+          <Pressable
+            onPress={() => {}}
+            accessibilityRole="button"
+            accessibilityLabel="Edit profile"
+            style={styles.editButton}
+          >
+            <Edit3 size={18} color={colors.primary} strokeWidth={2} />
+          </Pressable>
+        </View>
 
-      {isLoading ? (
-        <Loading message="Loading orders..." />
-      ) : isError ? (
-        <EmptyState
-          title="Couldn't load orders"
-          message="Pull to refresh or try again."
-          actionLabel="Try Again"
-          onAction={() => refetch()}
-        />
-      ) : filteredOrders.length === 0 ? (
-        <EmptyState
-          title={activeTab === 'active' ? 'No active orders' : 'No past orders'}
-          message={
-            activeTab === 'active'
-              ? "You haven't placed any active orders yet."
-              : "You haven't placed any orders yet."
-          }
-        />
-      ) : (
-        <FlatList
-          data={filteredOrders}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <OrderCard order={item} />}
-          ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
-          contentContainerStyle={{ padding: spacing.lg }}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account</Text>
+          <MenuItem icon={<MapPin size={20} color={colors.primary} strokeWidth={2} />} label="Saved Addresses" onPress={() => router.push('/(customer)/addresses')} />
+          <MenuItem icon={<ClipboardList size={20} color={colors.primary} strokeWidth={2} />} label="My Orders" onPress={() => router.push('/(customer)/(tabs)/orders')} />
+          <MenuItem icon={<Edit3 size={20} color={colors.primary} strokeWidth={2} />} label="Edit Profile" onPress={() => {}} />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Preferences</Text>
+          <MenuItem icon={<Heart size={20} color={colors.primary} strokeWidth={2} />} label="Favorites" onPress={() => router.push('/(customer)/favorites')} />
+          <MenuItem
+            icon={<Bell size={20} color={colors.primary} strokeWidth={2} />}
+            label="Notifications"
+            badge={unreadCount.data && unreadCount.data > 0 ? unreadCount.data : undefined}
+            onPress={() => router.push('/(customer)/notification')}
+          />
+          <MenuItem icon={<Ticket size={20} color={colors.primary} strokeWidth={2} />} label="Coupons" onPress={() => router.push('/(customer)/cupon')} />
+          <MenuItem icon={<Package size={20} color={colors.primary} strokeWidth={2} />} label="Combo Sets" onPress={() => router.push('/(customer)/(tabs)/search?tab=combos')} />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Support</Text>
+          <MenuItem icon={<HelpCircle size={20} color={colors.primary} strokeWidth={2} />} label="Help & Support" onPress={() => router.push('/(customer)/support')} />
+        </View>
+
+        <View style={styles.logoutSection}>
+          <Pressable
+            onPress={handleLogout}
+            accessibilityRole="button"
+            accessibilityLabel="Logout"
+            style={({ pressed }) => [styles.logoutButton, pressed && { opacity: 0.7 }]}
+          >
+            <LogOut size={20} color={colors.error} strokeWidth={2} />
+            <Text style={styles.logoutText}>Logout</Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.versionText}>64 Delivery v1.0.0</Text>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-function OrderCard({ order }: { order: Order }) {
-  const statusConfig = STATUS_CONFIG[order.status];
-
+function MenuItem({
+  icon,
+  label,
+  onPress,
+  badge,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onPress?: () => void;
+  badge?: number;
+}) {
   return (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Image source={{ uri: order.restaurantImage }} style={styles.restaurantImage} contentFit="cover" />
-        <View style={styles.cardHeaderInfo}>
-          <Text style={styles.restaurantName} numberOfLines={1}>{order.restaurantName}</Text>
-          <Text style={styles.orderNumber}>{order.orderNumber}</Text>
-          <Text style={styles.orderDate}>{timeAgo(order.createdAt)}</Text>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.menuItem, pressed && { opacity: 0.7 }]}
+    >
+      <View style={styles.menuIcon}>{icon}</View>
+      <Text style={styles.menuLabel}>{label}</Text>
+      {badge !== undefined && (
+        <View style={styles.menuBadge}>
+          <Text style={styles.menuBadgeText}>{badge}</Text>
         </View>
-        <Badge label={statusConfig.label} variant={statusConfig.variant} size="md" />
-      </View>
-
-      <View style={styles.itemsSection}>
-        {order.items.map((item) => (
-          <View key={item.id} style={styles.itemRow}>
-            <Image source={{ uri: item.image }} style={styles.itemImage} contentFit="cover" />
-            <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-            <Text style={styles.itemQty}>×{item.quantity}</Text>
-            <Text style={styles.itemPrice}>{formatCurrency(item.unitPrice * item.quantity)}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.totalLabel}>Total</Text>
-        <Text style={styles.totalValue}>{formatCurrency(order.total)}</Text>
-      </View>
-    </View>
+      )}
+      <ChevronRight size={20} color={colors.textMuted} strokeWidth={2} />
+    </Pressable>
   );
 }
 
@@ -140,109 +137,105 @@ const styles = StyleSheet.create({
     ...typography.heading1,
     fontSize: 26,
   },
-  tabBar: {
+  profileCard: {
     flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: spacing.sm + 2,
-    alignItems: 'center',
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceSecondary,
-  },
-  tabActive: {
-    backgroundColor: colors.primary,
-  },
-  tabText: {
-    ...typography.label,
-    color: colors.textSecondary,
-  },
-  tabTextActive: {
-    color: colors.white,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    ...shadows.sm,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingVertical: spacing.lg,
     gap: spacing.md,
   },
-  restaurantImage: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.md,
-  },
-  cardHeaderInfo: {
+  profileInfo: {
     flex: 1,
   },
-  restaurantName: {
-    ...typography.heading3,
-    fontSize: 16,
+  name: {
+    ...typography.heading2,
+    fontSize: 20,
   },
-  orderNumber: {
-    ...typography.caption,
-    color: colors.textMuted,
+  email: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
     marginTop: 2,
   },
-  orderDate: {
+  phone: {
     ...typography.caption,
-    color: colors.textSecondary,
+    color: colors.textMuted,
     marginTop: 1,
   },
-  itemsSection: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    gap: spacing.sm,
-  },
-  itemRow: {
-    flexDirection: 'row',
+  editButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primaryUltraLight,
     alignItems: 'center',
-    gap: spacing.sm,
+    justifyContent: 'center',
   },
-  itemImage: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.sm,
+  section: {
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
-  itemName: {
-    flex: 1,
-    ...typography.bodySmall,
-    color: colors.textPrimary,
-  },
-  itemQty: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-  itemPrice: {
+  sectionTitle: {
     ...typography.label,
-    color: colors.textPrimary,
-    fontSize: 13,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    fontSize: 12,
+    marginBottom: spacing.sm,
   },
-  footer: {
+  menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
   },
-  totalLabel: {
+  menuIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: colors.primaryUltraLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuLabel: {
+    flex: 1,
     ...typography.body,
-    color: colors.textSecondary,
+    color: colors.textPrimary,
   },
-  totalValue: {
-    ...typography.heading3,
-    color: colors.primary,
+  menuBadge: {
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.xs,
+  },
+  menuBadgeText: {
+    color: colors.white,
+    fontSize: 11,
     fontWeight: '700',
+  },
+  logoutSection: {
+    marginTop: spacing['2xl'],
+    paddingHorizontal: spacing.lg,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: colors.error,
+  },
+  logoutText: {
+    ...typography.button,
+    color: colors.error,
+  },
+  versionText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing['2xl'],
   },
 });

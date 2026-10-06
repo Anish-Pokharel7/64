@@ -1,4 +1,4 @@
-import { View, StyleSheet, Pressable } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@theme/colors';
 import { spacing } from '@theme/spacing';
@@ -10,8 +10,6 @@ type ScreenContainerProps = {
   safeArea?: boolean;
   scrollable?: boolean;
 };
-
-import { ScrollView } from 'react-native';
 
 export function ScreenContainer({
   children,

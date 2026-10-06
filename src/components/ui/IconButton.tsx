@@ -1,7 +1,5 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '@theme/colors';
-import { radius } from '@theme/radius';
-import { spacing } from '@theme/spacing';
 
 type IconButtonProps = {
   onPress?: () => void;
@@ -59,7 +57,6 @@ export function IconButton({
 }
 
 function Badge({ count }: { count: number }) {
-  const { Text, View } = require('react-native');
   return (
     <View style={badgeStyles.container}>
       <Text style={badgeStyles.text}>{count > 9 ? '9+' : count}</Text>

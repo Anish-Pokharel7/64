@@ -2,7 +2,6 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Minus, Plus } from 'lucide-react-native';
 import { colors } from '@theme/colors';
 import { typography } from '@theme/typography';
-import { radius } from '@theme/radius';
 import { spacing } from '@theme/spacing';
 
 type QuantitySelectorProps = {

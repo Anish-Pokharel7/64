@@ -17,7 +17,6 @@ import { colors } from '@theme/colors';
 import { typography } from '@theme/typography';
 import { spacing } from '@theme/spacing';
 import { Avatar } from '@components/ui/Avatar';
-import { Divider } from '@components/ui/Divider';
 import { useLogout } from '@hooks/useAuth';
 import { useAuthStore } from '@store/auth.store';
 import { mockCurrentUser } from '@mock/users';

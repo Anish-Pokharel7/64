@@ -1,4 +1,4 @@
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { Pressable, View, StyleSheet, ViewStyle } from 'react-native';
 import { colors } from '@theme/colors';
 import { radius } from '@theme/radius';
 import { shadows } from '@theme/shadows';
@@ -10,8 +10,6 @@ type CardProps = {
   padded?: boolean;
   onPress?: () => void;
 };
-
-import { Pressable } from 'react-native';
 
 export function Card({ children, style, padded = true, onPress }: CardProps) {
   if (onPress) {

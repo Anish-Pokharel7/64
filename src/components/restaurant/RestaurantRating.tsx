@@ -2,8 +2,6 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Star } from 'lucide-react-native';
 import { colors } from '@theme/colors';
 import { typography } from '@theme/typography';
-import { radius } from '@theme/radius';
-import { spacing } from '@theme/spacing';
 
 type RestaurantRatingProps = {
   rating: number;

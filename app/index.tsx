@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
@@ -7,7 +7,6 @@ import { colors } from '@theme/colors';
 import { typography } from '@theme/typography';
 import { spacing } from '@theme/spacing';
 import { useAuthStore } from '@store/auth.store';
-import { Text } from 'react-native';
 import { APP_CONFIG } from '@config/app.config';
 
 SplashScreen.preventAutoHideAsync();
