@@ -1,0 +1,16 @@
+export const ROUTES = {
+  INDEX: '/',
+  WELCOME: '/(auth)/welcome',
+  LOGIN: '/(auth)/login',
+  REGISTER: '/(auth)/register',
+  FORGOT_PASSWORD: '/(auth)/forgot-password',
+  HOME: '/(customer)/(tabs)/',
+  SEARCH: '/(customer)/(tabs)/search',
+  ORDERS: '/(customer)/(tabs)/orders',
+  PROFILE: '/(customer)/(tabs)/profile',
+  RESTAURANT: '/(customer)/restaurant/[id]',
+  FOOD: '/(customer)/food/[id]',
+  CART: '/(customer)/cart',
+  ADDRESSES: '/(customer)/addresses',
+  ADD_ADDRESS: '/(customer)/addresses/add',
+} as const;
