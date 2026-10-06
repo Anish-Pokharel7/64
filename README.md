@@ -43,14 +43,6 @@ A production-ready food delivery mobile application built for Itahari, Nepal.
 npm install
 ```
 
-## Environment Variables
-
-Copy `.env.example` to `.env` and configure:
-
-```env
-EXPO_PUBLIC_API_URL=http://localhost:5000/api
-```
-
 ## Running the App
 
 ```bash
