@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,22 +20,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-=======
-import { View, StyleSheet, ScrollView, Text, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Mail, Lock, Eye, EyeOff, ChevronLeft } from 'lucide-react-native';
-import { useState } from 'react';
-import { colors } from '@theme/colors';
-import { typography } from '@theme/typography';
-import { spacing } from '@theme/spacing';
-import { Button } from '@components/ui/Button';
-import { Input } from '@components/ui/Input';
-import { loginSchema, LoginFormData } from '@schemas/auth.schema';
-import { useLogin } from '@hooks/useAuth';
->>>>>>> 2124be51bf87b8e3ce4077c349e439a30fac644e
 
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
@@ -58,29 +41,21 @@ export default function LoginScreen() {
   };
 
   return (
-<<<<<<< HEAD
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.surface }}
       edges={['top']}
     >
-=======
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }} edges={['top']}>
->>>>>>> 2124be51bf87b8e3ce4077c349e439a30fac644e
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView
           style={{ flex: 1 }}
-<<<<<<< HEAD
           contentContainerStyle={{
             flexGrow: 1,
             paddingHorizontal: spacing.xl,
             paddingBottom: spacing['3xl'],
           }}
-=======
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: spacing.xl, paddingBottom: spacing['3xl'] }}
->>>>>>> 2124be51bf87b8e3ce4077c349e439a30fac644e
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -90,7 +65,6 @@ export default function LoginScreen() {
               onPress={() => router.back()}
               variant="ghost"
               size="sm"
-<<<<<<< HEAD
               leftIcon={
                 <ChevronLeft
                   size={24}
@@ -98,20 +72,14 @@ export default function LoginScreen() {
                   strokeWidth={2}
                 />
               }
-=======
-              leftIcon={<ChevronLeft size={24} color={colors.textPrimary} strokeWidth={2} />}
->>>>>>> 2124be51bf87b8e3ce4077c349e439a30fac644e
               style={{ paddingHorizontal: 0 }}
             />
           </View>
+
           <Text style={styles.title}>Welcome back</Text>
-<<<<<<< HEAD
           <Text style={styles.subtitle}>
             Login to continue ordering your favorite food
           </Text>
-=======
-          <Text style={styles.subtitle}>Login to continue ordering your favorite food</Text>
->>>>>>> 2124be51bf87b8e3ce4077c349e439a30fac644e
 
           <View style={styles.form}>
             <Controller
@@ -125,17 +93,14 @@ export default function LoginScreen() {
                   placeholder="you@example.com"
                   keyboardType="email-address"
                   error={errors.email?.message}
-<<<<<<< HEAD
                   leftIcon={
                     <Mail size={20} color={colors.textMuted} strokeWidth={2} />
                   }
-=======
-                  leftIcon={<Mail size={20} color={colors.textMuted} strokeWidth={2} />}
->>>>>>> 2124be51bf87b8e3ce4077c349e439a30fac644e
                   accessibleLabel="Email address"
                 />
               )}
             />
+
             <Controller
               control={control}
               name="password"
@@ -147,20 +112,14 @@ export default function LoginScreen() {
                   placeholder="Enter your password"
                   secureTextEntry={!showPassword}
                   error={errors.password?.message}
-<<<<<<< HEAD
                   leftIcon={
                     <Lock size={20} color={colors.textMuted} strokeWidth={2} />
                   }
                   rightIcon={
                     <PasswordToggle
                       show={showPassword}
-                      onToggle={() => setShowPassword(!showPassword)}
+                      onToggle={() => setShowPassword((prev) => !prev)}
                     />
-=======
-                  leftIcon={<Lock size={20} color={colors.textMuted} strokeWidth={2} />}
-                  rightIcon={
-                    <PasswordToggle show={showPassword} onToggle={() => setShowPassword(!showPassword)} />
->>>>>>> 2124be51bf87b8e3ce4077c349e439a30fac644e
                   }
                   accessibleLabel="Password"
                 />
@@ -179,12 +138,8 @@ export default function LoginScreen() {
 
             {loginMutation.isError && (
               <Text style={styles.errorText}>
-<<<<<<< HEAD
                 {loginMutation.error?.message ??
                   'Login failed. Please check your credentials.'}
-=======
-                {loginMutation.error?.message ?? 'Login failed. Please check your credentials.'}
->>>>>>> 2124be51bf87b8e3ce4077c349e439a30fac644e
               </Text>
             )}
 
@@ -214,7 +169,6 @@ export default function LoginScreen() {
   );
 }
 
-<<<<<<< HEAD
 function PasswordToggle({
   show,
   onToggle,
@@ -228,6 +182,7 @@ function PasswordToggle({
       hitSlop={8}
       style={{ padding: spacing.xs }}
       accessibilityRole="button"
+      accessibilityLabel={show ? 'Hide password' : 'Show password'}
     >
       {show ? (
         <EyeOff size={20} color={colors.textMuted} strokeWidth={2} />
@@ -235,17 +190,6 @@ function PasswordToggle({
         <Eye size={20} color={colors.textMuted} strokeWidth={2} />
       )}
     </Pressable>
-=======
-function PasswordToggle({ show, onToggle }: { show: boolean; onToggle: () => void }) {
-  return (
-    <View style={{ padding: spacing.xs }}>
-      {show ? (
-        <EyeOff size={20} color={colors.textMuted} strokeWidth={2} onPress={onToggle} />
-      ) : (
-        <Eye size={20} color={colors.textMuted} strokeWidth={2} onPress={onToggle} />
-      )}
-    </View>
->>>>>>> 2124be51bf87b8e3ce4077c349e439a30fac644e
   );
 }
 
