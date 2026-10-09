@@ -1,5 +1,5 @@
 import { supabase } from '@api/supabase';
-import { User } from '@models/user';
+import type { User } from '@models/user';
 
 function mapUser(data: Record<string, unknown>): User {
   return {
@@ -8,6 +8,9 @@ function mapUser(data: Record<string, unknown>): User {
     email: data.email as string,
     phone: (data.phone as string) ?? '',
     avatar: data.avatar as string | undefined,
+    role: data.role as User['role'],
+    status: data.status as User['status'],
+    isSuspended: (data.is_suspended as boolean) ?? false,
     createdAt: data.created_at as string,
   };
 }

@@ -32,7 +32,7 @@ export default function CheckoutScreen() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     addresses?.find((a) => a.isDefault)?.id ?? addresses?.[0]?.id ?? null
   );
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD');
   const [customerNote, setCustomerNote] = useState('');
   const [placing, setPlacing] = useState(false);
 
@@ -183,8 +183,8 @@ export default function CheckoutScreen() {
             icon={<Banknote size={22} color={colors.primary} strokeWidth={2} />}
             label="Cash on Delivery"
             description="Pay with cash when your order arrives"
-            selected={paymentMethod === 'cod'}
-            onPress={() => setPaymentMethod('cod')}
+            selected={paymentMethod === 'COD'}
+            onPress={() => setPaymentMethod('COD')}
           />
           <PaymentOption
             icon={<CreditCard size={22} color={colors.textMuted} strokeWidth={2} />}

@@ -1,6 +1,10 @@
-import { FoodCategory } from '@models/restaurant';
+type MockCategory = {
+  id: string;
+  name: string;
+  icon: string;
+};
 
-export const mockCategories: FoodCategory[] = [
+export const mockCategories: MockCategory[] = [
   { id: 'all', name: 'All', icon: 'UtensilsCrossed' },
   { id: 'momo', name: 'Momo', icon: 'CircleDot' },
   { id: 'pizza', name: 'Pizza', icon: 'Pizza' },

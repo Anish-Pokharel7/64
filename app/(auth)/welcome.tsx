@@ -21,7 +21,7 @@ export default function WelcomeScreen() {
           <Text style={styles.brandName}>64 Delivery</Text>
           <Text style={styles.headline}>Good food. Delivered better.</Text>
           <Text style={styles.description}>
-            Order from your favorite restaurants in Itahari. Fresh, fast, and right to your door.
+            Order delicious food from 64 Delivery in Itahari. Fresh, fast, and right to your door.
           </Text>
         </View>
 
@@ -44,7 +44,7 @@ export default function WelcomeScreen() {
           <FeatureItem
             icon={<Star size={22} color={colors.primary} strokeWidth={2} />}
             title="Top Rated"
-            description="Best restaurants in town"
+            description="Best food in town"
           />
         </View>
 

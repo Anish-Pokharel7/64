@@ -4,11 +4,11 @@ export type Food = {
   description?: string;
   price: number;
   image: string;
-  restaurantId: string;
-  restaurantName?: string;
   category: string;
   isPopular?: boolean;
   isVegetarian?: boolean;
+  isFeatured?: boolean;
+  isAvailable?: boolean;
   rating?: number;
   menuSection?: string;
   prepTimeMinutes?: number;

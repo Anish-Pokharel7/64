@@ -19,17 +19,17 @@ import { formatCurrency } from '@utils/currency';
 import { OrderStatus } from '@models/order';
 
 const STATUS_STEPS: { status: OrderStatus; label: string; icon: React.ReactNode }[] = [
-  { status: 'pending', label: 'Order Placed', icon: <Clock size={18} color={colors.textMuted} strokeWidth={2} /> },
-  { status: 'confirmed', label: 'Confirmed', icon: <Package size={18} color={colors.textMuted} strokeWidth={2} /> },
-  { status: 'preparing', label: 'Preparing', icon: <ChefHat size={18} color={colors.textMuted} strokeWidth={2} /> },
-  { status: 'ready', label: 'Ready for Pickup', icon: <Package size={18} color={colors.textMuted} strokeWidth={2} /> },
-  { status: 'driver_assigned', label: 'Driver Assigned', icon: <Bike size={18} color={colors.textMuted} strokeWidth={2} /> },
-  { status: 'picked_up', label: 'Picked Up', icon: <Bike size={18} color={colors.textMuted} strokeWidth={2} /> },
-  { status: 'out_for_delivery', label: 'Out for Delivery', icon: <Bike size={18} color={colors.textMuted} strokeWidth={2} /> },
-  { status: 'delivered', label: 'Delivered', icon: <CheckCircle2 size={18} color={colors.textMuted} strokeWidth={2} /> },
+  { status: 'PENDING', label: 'Order Placed', icon: <Clock size={18} color={colors.textMuted} strokeWidth={2} /> },
+  { status: 'CONFIRMED', label: 'Confirmed', icon: <Package size={18} color={colors.textMuted} strokeWidth={2} /> },
+  { status: 'PREPARING', label: 'Preparing', icon: <ChefHat size={18} color={colors.textMuted} strokeWidth={2} /> },
+  { status: 'READY_FOR_PICKUP', label: 'Ready for Pickup', icon: <Package size={18} color={colors.textMuted} strokeWidth={2} /> },
+  { status: 'DRIVER_ASSIGNED', label: 'Driver Assigned', icon: <Bike size={18} color={colors.textMuted} strokeWidth={2} /> },
+  { status: 'PICKED_UP', label: 'Picked Up', icon: <Bike size={18} color={colors.textMuted} strokeWidth={2} /> },
+  { status: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', icon: <Bike size={18} color={colors.textMuted} strokeWidth={2} /> },
+  { status: 'DELIVERED', label: 'Delivered', icon: <CheckCircle2 size={18} color={colors.textMuted} strokeWidth={2} /> },
 ];
 
-const STATUS_ORDER: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'driver_assigned', 'picked_up', 'out_for_delivery', 'delivered'];
+const STATUS_ORDER: OrderStatus[] = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'DRIVER_ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED'];
 
 function getStatusIndex(status: OrderStatus): number {
   const idx = STATUS_ORDER.indexOf(status);
@@ -58,7 +58,7 @@ export default function OrderTrackingScreen() {
 
   const order = orderQuery.data;
   const currentStepIndex = getStatusIndex(order.status);
-  const isCancelled = order.status === 'cancelled';
+  const isCancelled = order.status === 'CANCELLED';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }} edges={['top']}>
@@ -85,7 +85,7 @@ export default function OrderTrackingScreen() {
         </View>
 
         {/* Driver info */}
-        {order.driver && (order.status === 'driver_assigned' || order.status === 'picked_up' || order.status === 'out_for_delivery') && (
+        {order.driver && (order.status === 'DRIVER_ASSIGNED' || order.status === 'PICKED_UP' || order.status === 'OUT_FOR_DELIVERY') && (
           <View style={styles.driverCard}>
             <View style={styles.driverInfo}>
               <View style={styles.driverAvatar}>
@@ -180,7 +180,7 @@ export default function OrderTrackingScreen() {
         </View>
 
         {/* Rate button for delivered orders */}
-        {order.status === 'delivered' && (
+        {order.status === 'DELIVERED' && (
           <Button
             label="Rate this Order"
             onPress={() => router.push(`/(customer)/review/${order.id}`)}

@@ -121,7 +121,7 @@ export default function HomeScreen() {
                 renderItem={({ item }) => (
                   <CategoryCard
                     name={item.name}
-                    iconName={item.icon}
+                    iconName={item.icon ?? 'CircleDot'}
                     onPress={() => router.push(`/(customer)/(tabs)/search?category=${item.id}`)}
                   />
                 )}

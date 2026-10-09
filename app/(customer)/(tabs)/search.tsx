@@ -103,7 +103,7 @@ export default function SearchScreen() {
             renderItem={({ item }) => (
               <CategoryCard
                 name={item.name}
-                iconName={item.icon}
+                iconName={item.icon ?? 'CircleDot'}
                 isActive={selectedCategory === item.id}
                 onPress={() => setSelectedCategory(item.id)}
               />

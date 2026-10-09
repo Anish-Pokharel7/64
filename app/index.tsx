@@ -11,20 +11,29 @@ import { APP_CONFIG } from '@config/app.config';
 
 SplashScreen.preventAutoHideAsync();
 
+const ADMIN_ROLES = ['SUPER_ADMIN', 'ADMIN', 'KITCHEN_MANAGER', 'OPERATIONS_MANAGER', 'SUPPORT_AGENT', 'FINANCE_MANAGER'];
+
 export default function SplashScreenPage() {
   const isInitialized = useAuthStore((s) => s.isInitialized);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     if (isInitialized) {
       SplashScreen.hideAsync();
-      if (isAuthenticated) {
-        router.replace('/(customer)/(tabs)');
+      if (isAuthenticated && user) {
+        if (user.role === 'DRIVER') {
+          router.replace('/(driver)/(tabs)');
+        } else if (ADMIN_ROLES.includes(user.role)) {
+          router.replace('/(admin)/(tabs)');
+        } else {
+          router.replace('/(customer)/(tabs)');
+        }
       } else {
         router.replace('/(auth)/welcome');
       }
     }
-  }, [isInitialized, isAuthenticated]);
+  }, [isInitialized, isAuthenticated, user]);
 
   return (
     <View style={styles.container}>

@@ -8,7 +8,6 @@ function mapFood(data: Record<string, unknown>): Food {
     description: data.description as string | undefined,
     price: Number(data.price),
     image: (data.image as string) ?? '',
-    restaurantId: data.restaurant_id as string,
     category: (data.category as string) ?? '',
     isPopular: data.is_popular as boolean | undefined,
     isVegetarian: data.is_vegetarian as boolean | undefined,

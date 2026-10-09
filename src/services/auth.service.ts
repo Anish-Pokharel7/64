@@ -1,5 +1,5 @@
 import { supabase } from '@api/supabase';
-import { User, AuthResponse } from '@models/auth';
+import { User, AuthResponse, UserRole, UserStatus } from '@models/auth';
 
 function mapUser(data: Record<string, unknown>): User {
   return {
@@ -8,6 +8,9 @@ function mapUser(data: Record<string, unknown>): User {
     email: data.email as string,
     phone: (data.phone as string) ?? '',
     avatar: data.avatar as string | undefined,
+    role: (data.role as UserRole) ?? 'CUSTOMER',
+    status: (data.status as UserStatus) ?? 'ACTIVE',
+    isSuspended: (data.is_suspended as boolean) ?? false,
     createdAt: data.created_at as string,
   };
 }
@@ -19,19 +22,19 @@ export const authService = {
       password,
     });
 
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    if (!data.session) {
-      throw new Error('Login failed. No session returned.');
-    }
+    if (error) throw new Error(error.message);
+    if (!data.session) throw new Error('Login failed. No session returned.');
 
     const { data: profile } = await supabase
       .from('users')
       .select('*')
       .eq('id', data.user.id)
       .maybeSingle();
+
+    if (profile?.is_suspended) {
+      await supabase.auth.signOut();
+      throw new Error('Your account has been suspended. Please contact support.');
+    }
 
     return {
       user: mapUser(profile ?? { id: data.user.id, email: data.user.email ?? email, full_name: email, created_at: new Date().toISOString() }),
@@ -50,10 +53,7 @@ export const authService = {
       password: data.password,
     });
 
-    if (error) {
-      throw new Error(error.message);
-    }
-
+    if (error) throw new Error(error.message);
     if (!authData.session || !authData.user) {
       throw new Error('Registration failed. Please try again.');
     }
@@ -64,6 +64,8 @@ export const authService = {
       email: data.email,
       phone: data.phone,
       role: 'CUSTOMER',
+      status: 'ACTIVE',
+      is_suspended: false,
     });
 
     return {
@@ -72,6 +74,9 @@ export const authService = {
         fullName: data.fullName,
         email: data.email,
         phone: data.phone,
+        role: 'CUSTOMER',
+        status: 'ACTIVE',
+        isSuspended: false,
         createdAt: new Date().toISOString(),
       },
       token: authData.session.access_token,
@@ -80,9 +85,7 @@ export const authService = {
 
   async forgotPassword(email: string): Promise<{ message: string }> {
     const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) {
-      throw new Error(error.message);
-    }
+    if (error) throw new Error(error.message);
     return {
       message: `If an account exists for ${email}, a password reset link has been sent.`,
     };

@@ -59,8 +59,8 @@ export function FoodCard({
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>{food.name}</Text>
         <Text style={styles.description} numberOfLines={2}>{food.description}</Text>
-        {showRestaurant && food.restaurantName && (
-          <Text style={styles.restaurant} numberOfLines={1}>{food.restaurantName}</Text>
+        {showRestaurant && food.isFeatured && (
+          <Text style={styles.restaurant} numberOfLines={1}>Featured</Text>
         )}
         <View style={styles.bottomRow}>
           {food.rating && (

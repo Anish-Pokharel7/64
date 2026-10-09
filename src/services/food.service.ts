@@ -8,8 +8,6 @@ function mapFood(data: Record<string, unknown>): Food {
     description: data.description as string | undefined,
     price: Number(data.price ?? 0),
     image: (data.image as string) ?? '',
-    restaurantId: data.restaurant_id as string,
-    restaurantName: data.restaurant_name as string | undefined,
     category: (data.category_slug as string) ?? (data.category as string) ?? '',
     isPopular: data.is_popular as boolean | undefined,
     isVegetarian: data.is_vegetarian as boolean | undefined,
@@ -41,7 +39,7 @@ export const foodService = {
   async getFoodById(id: string): Promise<Food | null> {
     const { data, error } = await supabase
       .from('foods')
-      .select('*, categories(slug), restaurants(name)')
+      .select('*, categories(slug)')
       .eq('id', id)
       .maybeSingle();
 
@@ -50,14 +48,13 @@ export const foodService = {
     return mapFood({
       ...data,
       category_slug: data.categories?.slug,
-      restaurant_name: data.restaurants?.name,
     });
   },
 
   async getPopularFoods(): Promise<Food[]> {
     const { data, error } = await supabase
       .from('foods')
-      .select('*, categories(slug), restaurants(name)')
+      .select('*, categories(slug)')
       .eq('is_active', true)
       .eq('is_available', true)
       .eq('is_popular', true)
@@ -69,7 +66,6 @@ export const foodService = {
       mapFood({
         ...f,
         category_slug: f.categories?.slug,
-        restaurant_name: f.restaurants?.name,
       })
     );
   },
@@ -77,7 +73,7 @@ export const foodService = {
   async getFeaturedFoods(): Promise<Food[]> {
     const { data, error } = await supabase
       .from('foods')
-      .select('*, categories(slug), restaurants(name)')
+      .select('*, categories(slug)')
       .eq('is_active', true)
       .eq('is_available', true)
       .order('rating', { ascending: false })
@@ -88,26 +84,6 @@ export const foodService = {
       mapFood({
         ...f,
         category_slug: f.categories?.slug,
-        restaurant_name: f.restaurants?.name,
-      })
-    );
-  },
-
-  async getFoodsByRestaurant(restaurantId: string): Promise<Food[]> {
-    const { data, error } = await supabase
-      .from('foods')
-      .select('*, categories(slug), restaurants(name)')
-      .eq('restaurant_id', restaurantId)
-      .eq('is_active', true)
-      .eq('is_available', true)
-      .order('menu_section', { ascending: true });
-
-    if (error) throw new Error(error.message);
-    return (data ?? []).map((f) =>
-      mapFood({
-        ...f,
-        category_slug: f.categories?.slug,
-        restaurant_name: f.restaurants?.name,
       })
     );
   },
@@ -115,7 +91,7 @@ export const foodService = {
   async searchFoods(query: string): Promise<Food[]> {
     const { data, error } = await supabase
       .from('foods')
-      .select('*, categories(slug), restaurants(name)')
+      .select('*, categories(slug)')
       .eq('is_active', true)
       .eq('is_available', true)
       .ilike('name', `%${query}%`);
@@ -125,7 +101,6 @@ export const foodService = {
       mapFood({
         ...f,
         category_slug: f.categories?.slug,
-        restaurant_name: f.restaurants?.name,
       })
     );
   },
@@ -142,7 +117,7 @@ export const foodService = {
 
     const { data, error } = await supabase
       .from('foods')
-      .select('*, categories(slug), restaurants(name)')
+      .select('*, categories(slug)')
       .eq('category_id', catData.id)
       .eq('is_active', true)
       .eq('is_available', true);
@@ -152,7 +127,6 @@ export const foodService = {
       mapFood({
         ...f,
         category_slug: f.categories?.slug,
-        restaurant_name: f.restaurants?.name,
       })
     );
   },
@@ -180,5 +154,22 @@ export const foodService = {
         })),
       };
     });
+  },
+
+  async getCategories(): Promise<{ id: string; name: string; slug: string; image?: string; icon?: string }[]> {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('id, name, slug, image, icon')
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((c) => ({
+      id: c.id as string,
+      name: c.name as string,
+      slug: c.slug as string,
+      image: (c.image as string) ?? undefined,
+      icon: (c.icon as string) ?? undefined,
+    }));
   },
 };

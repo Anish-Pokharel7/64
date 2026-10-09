@@ -1,18 +1,9 @@
-export type MenuSection = {
-  id: string;
-  name: string;
-  foodIds: string[];
-};
-
-export type ApiResponse<T> = {
-  data: T;
-  message?: string;
-  success: boolean;
-};
-
-export type PaginatedResponse<T> = {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-};
+export * from './address';
+export * from './auth';
+export * from './cart';
+export * from './combo';
+export * from './delivery';
+export * from './food';
+export * from './notification';
+export * from './order';
+export * from './user';

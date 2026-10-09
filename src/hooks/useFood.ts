@@ -30,14 +30,6 @@ export function useFeaturedFoods() {
   });
 }
 
-export function useFoodsByRestaurant(restaurantId: string | undefined) {
-  return useQuery({
-    queryKey: ['foods', 'restaurant', restaurantId],
-    queryFn: () => foodService.getFoodsByRestaurant(restaurantId!),
-    enabled: !!restaurantId,
-  });
-}
-
 export function useSearchFoods(query: string) {
   return useQuery({
     queryKey: ['foods', 'search', query],

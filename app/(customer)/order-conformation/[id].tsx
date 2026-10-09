@@ -68,7 +68,7 @@ export default function OrderConfirmationScreen() {
             <View style={styles.paymentRow}>
               <Text style={styles.paymentLabel}>Payment</Text>
               <Text style={styles.paymentValue}>
-                {order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod ?? 'Cash on Delivery'}
+                {order.paymentMethod === 'COD' ? 'Cash on Delivery' : order.paymentMethod ?? 'Cash on Delivery'}
               </Text>
             </View>
           </View>

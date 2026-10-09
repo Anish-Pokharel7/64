@@ -7,6 +7,9 @@ export const mockUsers: User[] = [
     email: 'aarav.sharma@example.com',
     phone: '9801234567',
     avatar: undefined,
+    role: 'CUSTOMER',
+    status: 'ACTIVE',
+    isSuspended: false,
     createdAt: '2024-01-15T10:00:00Z',
   },
 ];

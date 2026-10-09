@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { restaurantService } from '@services/restaurant.service';
+import { foodService } from '@services/food.service';
 
 export function useCategories() {
   return useQuery({
     queryKey: ['categories'],
-    queryFn: () => restaurantService.getCategories(),
+    queryFn: () => foodService.getCategories(),
   });
 }
