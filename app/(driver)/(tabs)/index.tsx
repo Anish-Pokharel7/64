@@ -1,7 +1,7 @@
 import { View, StyleSheet, ScrollView, Text, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Bike, TrendingRevenue, Package, Star, Power, ArrowRight } from 'lucide-react-native';
+import { Bike, TrendingUp, Package, Star, Power, ArrowRight } from 'lucide-react-native';
 import { colors } from '@theme/colors';
 import { typography } from '@theme/typography';
 import { spacing } from '@theme/spacing';
@@ -94,7 +94,7 @@ export default function DriverHomeScreen() {
             value={String(profile?.totalDeliveries ?? 0)}
           />
           <StatPill
-            icon={<TrendingRevenue size={20} color={colors.success} strokeWidth={2} />}
+            icon={<TrendingUp size={20} color={colors.success} strokeWidth={2} />}
             label="Earnings"
             value={formatCurrency(profile?.totalEarnings ?? 0)}
           />

@@ -247,10 +247,18 @@ export const driverService = {
       event_type: 'DELIVERED',
     });
 
-    await supabase
+    const { data: profile } = await supabase
       .from('driver_profiles')
-      .update({ total_deliveries: (await supabase.from('driver_profiles').select('total_deliveries').eq('user_id', driverId).maybeSingle()).data?.total_deliveries + 1 })
-      .eq('user_id', driverId);
+      .select('total_deliveries')
+      .eq('user_id', driverId)
+      .maybeSingle();
+
+    if (profile) {
+      await supabase
+        .from('driver_profiles')
+        .update({ total_deliveries: Number(profile.total_deliveries ?? 0) + 1 })
+        .eq('user_id', driverId);
+    }
 
     return { success: true, message: 'Order delivered successfully!' };
   },
