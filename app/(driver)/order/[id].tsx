@@ -40,7 +40,7 @@ function formatDate(iso: string): string {
 export default function DriverOrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore((s) => s.user);
-  const { data: order, isLoading, isError, refetch } = useDriverOrder(id);
+  const { data: order, isLoading, isError, refetch } = useDriverOrder(id, user?.id);
   const acceptOrder = useAcceptOrder();
   const pickupOrder = usePickupOrder();
   const startDelivery = useStartDelivery();

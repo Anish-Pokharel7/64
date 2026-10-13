@@ -28,7 +28,7 @@ export function useDriverAssignedOrders(driverId: string | undefined) {
   });
 }
 
-export function useDriverOrder(id: string | undefined) {
+export function useDriverOrder(id: string | undefined, driverId: string | undefined) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -44,9 +44,9 @@ export function useDriverOrder(id: string | undefined) {
   }, [id, queryClient]);
 
   return useQuery({
-    queryKey: ['driver', 'order', id],
-    queryFn: () => driverService.getOrderById(id!),
-    enabled: !!id,
+    queryKey: ['driver', 'order', id, driverId],
+    queryFn: () => driverService.getOrderById(id!, driverId!),
+    enabled: !!id && !!driverId,
   });
 }
 

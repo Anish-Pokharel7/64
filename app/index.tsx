@@ -8,10 +8,9 @@ import { typography } from '@theme/typography';
 import { spacing } from '@theme/spacing';
 import { useAuthStore } from '@store/auth.store';
 import { APP_CONFIG } from '@config/app.config';
+import { getHomeRouteForRole } from '@constants/routes';
 
 SplashScreen.preventAutoHideAsync();
-
-const ADMIN_ROLES = ['SUPER_ADMIN', 'ADMIN', 'KITCHEN_MANAGER', 'OPERATIONS_MANAGER', 'SUPPORT_AGENT', 'FINANCE_MANAGER'];
 
 export default function SplashScreenPage() {
   const isInitialized = useAuthStore((s) => s.isInitialized);
@@ -22,13 +21,7 @@ export default function SplashScreenPage() {
     if (isInitialized) {
       SplashScreen.hideAsync();
       if (isAuthenticated && user) {
-        if (user.role === 'DRIVER') {
-          router.replace('/(driver)/(tabs)');
-        } else if (ADMIN_ROLES.includes(user.role)) {
-          router.replace('/(admin)/(tabs)');
-        } else {
-          router.replace('/(customer)/(tabs)');
-        }
+        router.replace(getHomeRouteForRole(user.role) as never);
       } else {
         router.replace('/(auth)/welcome');
       }

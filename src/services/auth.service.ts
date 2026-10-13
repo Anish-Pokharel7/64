@@ -25,11 +25,20 @@ export const authService = {
     if (error) throw new Error(error.message);
     if (!data.session) throw new Error('Login failed. No session returned.');
 
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('users')
       .select('*')
       .eq('id', data.user.id)
       .maybeSingle();
+
+    if (profileError) {
+      await supabase.auth.signOut();
+      throw new Error(profileError.message);
+    }
+    if (!profile) {
+      await supabase.auth.signOut();
+      throw new Error('Your user profile could not be found. Please contact support.');
+    }
 
     if (profile?.is_suspended) {
       await supabase.auth.signOut();
@@ -37,7 +46,7 @@ export const authService = {
     }
 
     return {
-      user: mapUser(profile ?? { id: data.user.id, email: data.user.email ?? email, full_name: email, created_at: new Date().toISOString() }),
+      user: mapUser(profile),
       token: data.session.access_token,
     };
   },
@@ -58,7 +67,7 @@ export const authService = {
       throw new Error('Registration failed. Please try again.');
     }
 
-    await supabase.from('users').insert({
+    const { error: profileError } = await supabase.from('users').insert({
       id: authData.user.id,
       full_name: data.fullName,
       email: data.email,
@@ -67,6 +76,10 @@ export const authService = {
       status: 'ACTIVE',
       is_suspended: false,
     });
+    if (profileError) {
+      await supabase.auth.signOut();
+      throw new Error(profileError.message);
+    }
 
     return {
       user: {
@@ -99,12 +112,13 @@ export const authService = {
     const { data: session } = await supabase.auth.getSession();
     if (!session.session) return null;
 
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('users')
       .select('*')
       .eq('id', session.session.user.id)
       .maybeSingle();
 
+    if (error) throw new Error(error.message);
     if (!profile) return null;
     return mapUser(profile);
   },

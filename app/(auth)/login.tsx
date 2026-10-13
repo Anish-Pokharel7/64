@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useLogin } from '@hooks/useAuth';
 import { LoginFormData, loginSchema } from '@schemas/auth.schema';
 import { colors } from '@theme/colors';
+import { getHomeRouteForRole } from '@constants/routes';
 import { spacing } from '@theme/spacing';
 import { typography } from '@theme/typography';
 import { router } from 'expo-router';
@@ -36,7 +37,7 @@ export default function LoginScreen() {
 
   const onSubmit = (data: LoginFormData) => {
     loginMutation.mutate(data, {
-      onSuccess: () => router.replace('/(customer)/(tabs)'),
+      onSuccess: (response) => router.replace(getHomeRouteForRole(response.user.role) as never),
     });
   };
 

@@ -1,3 +1,5 @@
+import type { UserRole } from '@models/user';
+
 export const ROUTES = {
   INDEX: '/',
   WELCOME: '/(auth)/welcome',
@@ -24,3 +26,18 @@ export const ROUTES = {
   ADMIN_HOME: '/(admin)/(tabs)/',
   DRIVER_HOME: '/(driver)/(tabs)/',
 } as const;
+
+const ADMIN_ROLES: UserRole[] = [
+  'SUPER_ADMIN',
+  'ADMIN',
+  'KITCHEN_MANAGER',
+  'OPERATIONS_MANAGER',
+  'SUPPORT_AGENT',
+  'FINANCE_MANAGER',
+];
+
+export function getHomeRouteForRole(role: UserRole): string {
+  if (role === 'DRIVER') return ROUTES.DRIVER_HOME;
+  if (ADMIN_ROLES.includes(role)) return ROUTES.ADMIN_HOME;
+  return ROUTES.HOME;
+}

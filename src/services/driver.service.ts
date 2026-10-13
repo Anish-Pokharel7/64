@@ -73,6 +73,38 @@ const orderSelect = `
   order_status_history(*)
 `;
 
+function throwIfError(error: { message: string } | null): void {
+  if (error) throw new Error(error.message);
+}
+
+async function updateAssignedOrder(
+  orderId: string,
+  driverId: string,
+  expectedStatus: OrderStatus | OrderStatus[],
+  updates: Record<string, unknown>,
+): Promise<void> {
+  let query = supabase
+    .from('orders')
+    .update(updates)
+    .eq('id', orderId)
+    .eq('driver_id', driverId);
+
+  query = Array.isArray(expectedStatus)
+    ? query.in('status', expectedStatus)
+    : query.eq('status', expectedStatus);
+
+  const { data, error } = await query.select('id').maybeSingle();
+  throwIfError(error);
+  if (!data) throw new Error('This order is no longer available for this action.');
+}
+
+async function addStatusHistory(orderId: string, status: OrderStatus): Promise<void> {
+  const { error } = await supabase
+    .from('order_status_history')
+    .insert({ order_id: orderId, status });
+  throwIfError(error);
+}
+
 export const driverService = {
   async getAssignedOrders(driverId: string): Promise<Order[]> {
     const { data, error } = await supabase
@@ -85,11 +117,12 @@ export const driverService = {
     return (data ?? []).map(mapOrder);
   },
 
-  async getOrderById(id: string): Promise<Order | null> {
+  async getOrderById(id: string, driverId: string): Promise<Order | null> {
     const { data, error } = await supabase
       .from('orders')
       .select(orderSelect)
       .eq('id', id)
+      .eq('driver_id', driverId)
       .maybeSingle();
     if (error) throw new Error(error.message);
     return data ? mapOrder(data) : null;
@@ -108,63 +141,55 @@ export const driverService = {
   },
 
   async acceptOrder(orderId: string, driverId: string): Promise<void> {
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        status: 'DRIVER_ACCEPTED',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', orderId)
-      .eq('driver_id', driverId);
-    if (error) throw new Error(error.message);
-
-    await supabase.from('order_status_history').insert({
-      order_id: orderId,
+    const now = new Date().toISOString();
+    await updateAssignedOrder(orderId, driverId, 'DRIVER_ASSIGNED', {
       status: 'DRIVER_ACCEPTED',
+      updated_at: now,
     });
+    await addStatusHistory(orderId, 'DRIVER_ACCEPTED');
 
-    await supabase.from('delivery_assignments')
+    const { data: assignment, error } = await supabase.from('delivery_assignments')
       .update({ status: 'ACCEPTED', accepted_at: new Date().toISOString() })
       .eq('order_id', orderId)
-      .eq('driver_id', driverId);
+      .eq('driver_id', driverId)
+      .select('id')
+      .maybeSingle();
+    throwIfError(error);
+    if (!assignment) throw new Error('Delivery assignment not found.');
   },
 
   async pickupOrder(orderId: string, driverId: string): Promise<void> {
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        status: 'PICKED_UP',
-        picked_up_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', orderId)
-      .eq('driver_id', driverId);
-    if (error) throw new Error(error.message);
-
-    await supabase.from('order_status_history').insert({
-      order_id: orderId,
+    const now = new Date().toISOString();
+    await updateAssignedOrder(orderId, driverId, 'DRIVER_ACCEPTED', {
       status: 'PICKED_UP',
+      picked_up_at: now,
+      updated_at: now,
     });
+    await addStatusHistory(orderId, 'PICKED_UP');
   },
 
   async startDelivery(orderId: string, driverId: string): Promise<void> {
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        status: 'OUT_FOR_DELIVERY',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', orderId)
-      .eq('driver_id', driverId);
-    if (error) throw new Error(error.message);
-
-    await supabase.from('order_status_history').insert({
-      order_id: orderId,
+    await updateAssignedOrder(orderId, driverId, 'PICKED_UP', {
       status: 'OUT_FOR_DELIVERY',
+      updated_at: new Date().toISOString(),
     });
+    await addStatusHistory(orderId, 'OUT_FOR_DELIVERY');
   },
 
   async verifyOtpAndDeliver(orderId: string, driverId: string, otpCode: string): Promise<{ success: boolean; message: string }> {
+    const { data: order, error: orderReadError } = await supabase
+      .from('orders')
+      .select('id, status, payment_method, total')
+      .eq('id', orderId)
+      .eq('driver_id', driverId)
+      .in('status', ['PICKED_UP', 'OUT_FOR_DELIVERY'])
+      .maybeSingle();
+
+    throwIfError(orderReadError);
+    if (!order) {
+      return { success: false, message: 'This order is not assigned to you or is not ready for delivery.' };
+    }
+
     const { data: otp, error: otpError } = await supabase
       .from('delivery_otps')
       .select('id, otp_code, is_verified, attempts, max_attempts, expires_at')
@@ -184,10 +209,18 @@ export const driverService = {
     }
 
     if (otp.otp_code !== otpCode) {
-      await supabase
+      const { data: updatedOtp, error } = await supabase
         .from('delivery_otps')
         .update({ attempts: otp.attempts + 1 })
-        .eq('id', otp.id);
+        .eq('id', otp.id)
+        .eq('attempts', otp.attempts)
+        .eq('is_verified', false)
+        .select('id')
+        .maybeSingle();
+      throwIfError(error);
+      if (!updatedOtp) {
+        return { success: false, message: 'OTP changed while verifying. Please try again.' };
+      }
       const remaining = otp.max_attempts - (otp.attempts + 1);
       return {
         success: false,
@@ -196,75 +229,73 @@ export const driverService = {
     }
 
     const now = new Date().toISOString();
-    await supabase
-      .from('delivery_otps')
-      .update({ is_verified: true, verified_at: now })
-      .eq('id', otp.id);
-
-    const { error: orderError } = await supabase
-      .from('orders')
-      .update({
-        status: 'DELIVERED',
-        delivered_at: now,
-        updated_at: now,
-      })
-      .eq('id', orderId)
-      .eq('driver_id', driverId);
-    if (orderError) throw new Error(orderError.message);
-
-    await supabase.from('order_status_history').insert({
-      order_id: orderId,
+    await updateAssignedOrder(orderId, driverId, order.status as OrderStatus, {
       status: 'DELIVERED',
+      delivered_at: now,
+      updated_at: now,
     });
 
-    const { data: order } = await supabase
-      .from('orders')
-      .select('payment_method, total')
-      .eq('id', orderId)
+    const { data: verifiedOtp, error: verifyError } = await supabase
+      .from('delivery_otps')
+      .update({ is_verified: true, verified_at: now })
+      .eq('id', otp.id)
+      .eq('is_verified', false)
+      .select('id')
       .maybeSingle();
+    throwIfError(verifyError);
+    if (!verifiedOtp) throw new Error('The OTP was already used. Please refresh this delivery.');
+
+    await addStatusHistory(orderId, 'DELIVERED');
 
     if (order?.payment_method === 'COD') {
-      await supabase.from('cod_collections').insert({
+      const { error } = await supabase.from('cod_collections').insert({
         order_id: orderId,
         driver_id: driverId,
         expected_amount: Number(order.total),
         collected_amount: Number(order.total),
         collected_at: now,
       });
+      throwIfError(error);
 
-      await supabase.from('payments')
+      const { data: payment, error: paymentError } = await supabase.from('payments')
         .update({ status: 'CASH_COLLECTED' })
-        .eq('order_id', orderId);
+        .eq('order_id', orderId)
+        .select('id')
+        .maybeSingle();
+      throwIfError(paymentError);
+      if (!payment) throw new Error('Payment record not found for this order.');
     } else {
-      await supabase.from('payments')
+      const { data: payment, error } = await supabase.from('payments')
         .update({ status: 'PAID' })
-        .eq('order_id', orderId);
+        .eq('order_id', orderId)
+        .select('id')
+        .maybeSingle();
+      throwIfError(error);
+      if (!payment) throw new Error('Payment record not found for this order.');
     }
 
-    await supabase.from('delivery_events').insert({
-      order_id: orderId,
-      driver_id: driverId,
-      event_type: 'DELIVERED',
-    });
-
-    await supabase
-      .from('driver_profiles')
-      .update({ total_deliveries: (await supabase.from('driver_profiles').select('total_deliveries').eq('user_id', driverId).maybeSingle()).data?.total_deliveries + 1 })
-      .eq('user_id', driverId);
+    const { error: deliveryRecordError } = await supabase.rpc(
+      'record_driver_delivery',
+      { p_order_id: orderId },
+    );
+    throwIfError(deliveryRecordError);
 
     return { success: true, message: 'Order delivered successfully!' };
   },
 
   async toggleOnlineStatus(driverId: string, isOnline: boolean): Promise<void> {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('driver_profiles')
       .update({
         is_online: isOnline,
         status: isOnline ? 'ONLINE' : 'OFFLINE',
         updated_at: new Date().toISOString(),
       })
-      .eq('user_id', driverId);
-    if (error) throw new Error(error.message);
+      .eq('user_id', driverId)
+      .select('user_id')
+      .maybeSingle();
+    throwIfError(error);
+    if (!data) throw new Error('Driver profile not found.');
   },
 
   async getProfile(driverId: string): Promise<{
