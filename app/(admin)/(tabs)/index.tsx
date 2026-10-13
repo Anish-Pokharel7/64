@@ -1,7 +1,7 @@
 import { View, StyleSheet, ScrollView, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Package, Clock, TrendingRevenue, Bike, ArrowRight } from 'lucide-react-native';
+import { Package, Clock, TrendingUp, Bike, ArrowRight } from 'lucide-react-native';
 import { colors } from '@theme/colors';
 import { typography } from '@theme/typography';
 import { spacing } from '@theme/spacing';
@@ -104,7 +104,7 @@ export default function AdminDashboardScreen() {
             bgColor={colors.warningLight}
           />
           <StatCard
-            icon={<TrendingRevenue size={22} color={colors.success} strokeWidth={2} />}
+            icon={<TrendingUp size={22} color={colors.success} strokeWidth={2} />}
             label="Revenue"
             value={formatCurrency(stats?.revenue ?? 0)}
             color={colors.success}
